@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import date
+from typing import Optional
 
 app = FastAPI(
     title='Сервис объявлений купли/продажи',
@@ -31,6 +32,14 @@ class Advertisement(BaseModel):
     price: float
     author: str
     creation_date: date
+
+
+class AdvertisementUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    author: Optional[str] = None
+    creation_date: Optional[date] = None
 
 
 classifieds_service = [
@@ -127,8 +136,9 @@ def get_advertisement(ad_id: int):
 def create_advertisement(advertisement: Advertisement):
     new_ad = advertisement.dict()
     new_ad['id'] = get_next_id()
+    new_ad['creation_date'] = str(date.today())
     classifieds_service.append(new_ad)
-    return advertisement
+    return new_ad
 
 
 # Обновить все объявление
@@ -156,16 +166,12 @@ def replace_advertisement(ad_id: int, ad: Advertisement):
 def update_advertisement_partially(ad_id: int, ad: Advertisement):
     for i, existing_ad in enumerate(classifieds_service):
         if existing_ad['id'] == ad_id:
-            if ad.title is not None:
-                existing_ad['title'] = ad.title
-            if ad.description is not None:
-                existing_ad['description'] = ad.description
-            if ad.price is not None:
-                existing_ad['price'] = ad.price
-            if ad.author is not None:
-                existing_ad['author'] = ad.author
-            if ad.creation_date is not None:
-                existing_ad['creation_date'] = str(ad.creation_date)
+            update_data = ad.dict(exclude_unset=True)
+            for key, value in update_data.items():
+                if key == 'creation_date' and value is not None:
+                    existing_ad[key] = str(value)
+                elif value is not None:
+                    existing_ad[key] = value
             return existing_ad
     raise HTTPException(status_code=404, detail='Объявление не найдено')
 
