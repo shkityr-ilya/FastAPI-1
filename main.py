@@ -31,7 +31,7 @@ class Advertisement(BaseModel):
     description: str
     price: float
     author: str
-    creation_date: date
+    creation_date: Optional[date]=None
 
 
 class AdvertisementUpdate(BaseModel):
@@ -134,7 +134,7 @@ def get_advertisement(ad_id: int):
           summary='Создать новое объявление',
           tags=['Сервис объявлений📜'])
 def create_advertisement(advertisement: Advertisement):
-    new_ad = advertisement.dict()
+    new_ad = advertisement.dict(exclude={"creation_date"})
     new_ad['id'] = get_next_id()
     new_ad['creation_date'] = str(date.today())
     classifieds_service.append(new_ad)
@@ -163,7 +163,7 @@ def replace_advertisement(ad_id: int, ad: Advertisement):
            summary='Частичное обновление объявления',
            tags=['Сервис объявлений📜']
            )
-def update_advertisement_partially(ad_id: int, ad: Advertisement):
+def update_advertisement_partially(ad_id: int, ad: AdvertisementUpdate):
     for i, existing_ad in enumerate(classifieds_service):
         if existing_ad['id'] == ad_id:
             update_data = ad.dict(exclude_unset=True)
